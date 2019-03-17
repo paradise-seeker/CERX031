@@ -15,9 +15,7 @@ public class Media implements Media_Intfc {
 	
 	private String _userpath;
 	FileSystem_Intfc _filesystem;
-	/*
-	 * 
-	 */
+
 	Media(JSONObject config, FileSystem_Intfc filesystem) {
 		_filesystem = filesystem;
 		try {
@@ -35,8 +33,8 @@ public class Media implements Media_Intfc {
 		if(SetFileSystemPath()) {
 			List<StoreDate_Intfc> index = _filesystem.GetUserFileIndex();
 			json.put(INDEX_NUM, index.size());
-			for(int jsonname = 0; jsonname < index.size(); jsonname++) {
-				json.put(String.valueOf(jsonname), index.get(jsonname).toString());
+			for(int key = 0; key < index.size(); key++) {
+				json.put(String.valueOf(key), index.get(key).toString());
 			}
 		}
 		return json;
