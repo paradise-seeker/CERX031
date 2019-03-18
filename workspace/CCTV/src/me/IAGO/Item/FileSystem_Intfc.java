@@ -51,10 +51,10 @@ public interface FileSystem_Intfc {
     /*
      *  保存为byte流文件，StoreDate_Intfc 提供了保存路径以及文件名
      * */
-    public boolean SaveUserFile(Byte[] data, StoreDate_Intfc date);
+    public boolean SaveUserFile(Byte data, StoreDate_Intfc date);
     public boolean DeleteUserFile(StoreDate_Intfc date);
     /*
      *   取media文件，StoreDate_Intfc 同上
      * */
-    public Byte[] GetUserFile(StoreDate_Intfc date);
+    public Byte GetUserFile(StoreDate_Intfc date);
 }

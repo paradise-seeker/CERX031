@@ -1,7 +1,9 @@
 package me.IAGO.Media;
 
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Vector;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -11,28 +13,53 @@ import me.IAGO.Item.StoreDate;
 import me.IAGO.Item.StoreDate_Intfc;;
 
 public class Media implements Media_Intfc {
-	final String INDEX_NUM = "fileindexnum";
+	final String MEDIA_INDEXNUM = "media_indexnum";
+	final String MEDIA_SAVE = "media_save";
 	
-	private String _userpath;
-	FileSystem_Intfc _filesystem;
-
-	Media(JSONObject config, FileSystem_Intfc filesystem) {
-		_filesystem = filesystem;
-		try {
-			_userpath = config.getString("Username");
-			
-		}
-		catch(JSONException ep) {
-			
-		}
+	private class MediaData {
+	    
+	    private StringBuffer [] _mediadata = new [2] StringBuffer() ;
+	    private int _bufferselect = 0;
+	    
+	    public void Save(Byte data) {
+	        int bufferptr = ChangeBuffer(false);
+	        
+	    }
+	    
+	    private synchronized int ChangeBuffer(boolean bufferswitch) {
+	        if(bufferswitch) {
+	            _bufferselect = 1 - _bufferselect;
+	        }
+	        return _bufferselect;
+	    }
 	}
 	
+	private class MediaDataWatcher extends Observable {
+	    public void Notice(Byte data) {
+	        super.setChanged();
+	        super.notifyObservers(data);
+	    }
+	}
+	private MediaDataWatcher mediawatcher;
+	private FileSystem_Intfc _filesystem;
+	private String _username;
+	
+    @Override
+    public boolean Config(JSONObject conf) {
+        
+        if(conf.getBoolean(MEDIA_SAVE)) {
+            
+        }
+        return true;
+    }
+    
 	@Override
-	public JSONObject GetMediaRecordDate() {
+	public JSONObject GetMediaRecordDate()
+	        throws JSONException{
 		JSONObject json = new JSONObject();
 		if(SetFileSystemPath()) {
 			List<StoreDate_Intfc> index = _filesystem.GetUserFileIndex();
-			json.put(INDEX_NUM, index.size());
+			json.put(MEDIA_INDEXNUM, index.size());
 			for(int key = 0; key < index.size(); key++) {
 				json.put(String.valueOf(key), index.get(key).toString());
 			}
@@ -41,49 +68,56 @@ public class Media implements Media_Intfc {
 	}
 
 	@Override
-	public boolean DelectMediaDate(JSONObject date) {
+	public boolean DelectMediaDate(JSONObject date)
+	        throws JSONException {
 		if(SetFileSystemPath()) {
-			for(int key = 0; key < date.getInt(INDEX_NUM); key++) {
-				try {
-					_filesystem.DeleteUserFile(
-							new StoreDate(date.getJSONObject(String.valueOf(key))));
-				}
-				catch (JSONException ex) {
-					
-				}
+			for(int key = 0; key < date.getInt(MEDIA_INDEXNUM); key++) {
+			    _filesystem.DeleteUserFile(new StoreDate(date.getJSONObject(String.valueOf(key))));
 			}
 		}
 		return false;
 	}
 
 	@Override
-	public boolean PullMediaData(JSONObject date, Callable<Byte[]> transmissiondata) {
-		// TODO Auto-generated method stub
+	public boolean PullMediaData(JSONObject date, PullMediaDataCallback callbackfunc)
+	        throws JSONException {
+	    if(SetFileSystemPath()) {
+	        StringBuffer mergemediadata = new StringBuffer();
+	        for(int key = 0; key < date.getInt(MEDIA_INDEXNUM); key++) {
+	            mergemediadata.append(_filesystem.GetUserFile(new StoreDate(date.getJSONObject(String.valueOf(key)))).toString());
+	        }  
+	        return callbackfunc.Push(new Byte(mergemediadata.toString()));
+	    }
 		return false;
 	}
 
 	@Override
-	public boolean PushMediaData(Byte[] data) {
-		// TODO Auto-generated method stub
+	public boolean PushMediaData(Byte data) {
+	    mediawatcher.Notice(data);
 		return false;
 	}
 
 	@Override
-	public boolean StartMediaForward(Forward_Intfc forwardobject) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean StartMediaForward(Observer forwardobject) {
+	    mediawatcher.addObserver(forwardobject);
+		return true;
 	}
 
 	@Override
-	public boolean StopMediaForward(Forward_Intfc forwardobject) {
-		// TODO Auto-generated method stub
+	public boolean StopMediaForward(Observer forwardobject) {
+	    mediawatcher.deleteObserver(forwardobject);
 		return false;
 	}
 
-	private boolean SetFileSystemPath() {
+	private boolean SetFileSystemPath()
+	        throws JSONException{
 		if(_filesystem.Available()) {
-			return _filesystem.GotoUserPath(_userpath);
+			return _filesystem.GotoUserPath(_username);
 		}
 		return false;
+	}
+	
+	private void SaveMediaFile(Byte data) {
+	    
 	}
 }
