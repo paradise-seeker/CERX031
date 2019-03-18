@@ -5,7 +5,7 @@ import java.util.Date;
 import org.json.JSONObject;
 
 public class StoreDate implements StoreDate_Intfc {
-
+	
 	public StoreDate(JSONObject json){
 		
 	}
